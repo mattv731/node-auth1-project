@@ -1,3 +1,5 @@
+const User = require('./../users/users-model')
+
 /*
   If the user does not have a session saved in the server
 
@@ -22,8 +24,15 @@ function restricted(req, res, next) {
     "message": "Username taken"
   }
 */
-function checkUsernameFree() {
-
+async function checkUsernameFree(req, res, next) {
+  const { username } = await req.body
+  const users = User.find()
+  users.forEach(user => {
+    if( user.username === username) {
+    next({status: 422, "message": "Username taken" })
+    } else {return}
+  })
+  next()
 }
 
 /*
@@ -51,5 +60,7 @@ function checkPasswordLength() {
 }
 
 // Don't forget to add these to the `exports` object so they can be required in other modules
-module.exports = {restricted
+module.exports = {
+  restricted,
+  checkUsernameFree,
 }

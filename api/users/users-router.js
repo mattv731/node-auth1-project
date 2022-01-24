@@ -4,6 +4,7 @@ const router = require('express').Router()
 const Users = require('./users-model')
 
 router.get('/', restricted, (req, res, next) => {
+  console.log(req.session)
   Users.find()
   .then(user => {
     res.json(user)
