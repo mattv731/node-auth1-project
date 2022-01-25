@@ -25,14 +25,14 @@ function restricted(req, res, next) {
   }
 */
 async function checkUsernameFree(req, res, next) {
-  const { username } = await req.body
-  const users = User.find()
-  users.forEach(user => {
-    if( user.username === username) {
-    next({status: 422, "message": "Username taken" })
-    } else {return}
-  })
-  next()
+  try {
+    const users = await User.findBy({ username: req.body.username})
+  if (!users.length) {
+    next()
+  } else { 
+    next({ status: 422, "message": "Username taken"})
+}
+  } catch (err){next(err)}
 }
 
 /*
@@ -43,8 +43,17 @@ async function checkUsernameFree(req, res, next) {
     "message": "Invalid credentials"
   }
 */
-function checkUsernameExists() {
-
+async function checkUsernameExists(req, res, next) {
+  try {
+    const users = await User.findBy({ username: req.body.username})
+    if(users.length) {
+      next()
+    } else {
+      next({status: 401, "message": "Invalid credentials"})
+    }
+  } catch (err) {
+    next(err)
+  }
 }
 
 /*
@@ -55,12 +64,18 @@ function checkUsernameExists() {
     "message": "Password must be longer than 3 chars"
   }
 */
-function checkPasswordLength() {
-
+function checkPasswordLength(req, res, next) {
+  if(!req.body.password || req.body.password.length < 4) {
+    next({ status: 422, message: "Password must be longer than 3 chars"})
+  } else {
+    next()
+  }
 }
 
 // Don't forget to add these to the `exports` object so they can be required in other modules
 module.exports = {
   restricted,
   checkUsernameFree,
+  checkUsernameExists,
+  checkPasswordLength
 }
