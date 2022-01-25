@@ -32,17 +32,14 @@ const {
     "message": "Password must be longer than 3 chars"
   }
  */
-router.post('/register', checkPasswordLength, checkUsernameFree, async (req, res, next) => {
-  try {
-    const {username, password} = await req.body
+router.post('/register', checkPasswordLength, checkUsernameFree, (req, res, next) => {
+    const {username, password} = req.body
     const hash = bcrypt.hashSync(password, 8)
-    const newUser = { username, password: hash}
-    await Users.add(newUser)
-    await Users.findById(newUser)
-    res.json({"user_id": req.body.user_id, "username": req.body.username})
-  } catch (err) {
-    next({ status: 401, message: "Username taken" })
-  }
+    Users.add({ username, password: hash})
+      .then(user => {
+        res.status(201).json(user)
+      })
+      .catch(next)
 })
 
 /**
@@ -60,18 +57,16 @@ router.post('/register', checkPasswordLength, checkUsernameFree, async (req, res
     "message": "Invalid credentials"
   }
  */
-router.post('/login', checkUsernameExists, async (req, res, next) => {
-  try {
-    const { username, password } = req.body
-    const [user] = await Users.findBy({username})
-    if (user && bcrypt.compareSync(password, user.password)) {
-      res.json({ message: `Welcome ${username}!` })
+router.post('/login', checkUsernameExists, (req, res, next) => {
+    const { password } = req.body
+    if (bcrypt.compareSync(password, req.user.password)) {
+      // make is so the cookie is set on the client
+      // make it so the server stores a session with a session id
+      req.session.user = req.user
+      res.json({ message: `Welcome ${req.user.username}`})
     } else {
-      next({ status: 401, message: "Invalid credentials"})
+      next({ status: 401, message: "Invalid credentials" })
     }
-  } catch (err) {
-    next(err)
-  }
 })
 
 /**
